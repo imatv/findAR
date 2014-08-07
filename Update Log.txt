@@ -1,0 +1,12 @@
+TODO: Restart and close all applications before demo.
+TODO: Invert color of outline indicator.
+TODO: Gray out
+---------------------------------------------------------------------------------------------------------------------
+8/7/2014 4:25 AM PST (PUSHED TO GITHUB)
+
+Imported OpenCV libraries.
+Got black/white image threshold to work with live webcam feed.
+Got object tracking by color to work.
+Got HSV color wheel to work interactively.
+Can use Oculus Overlay to view the tracking video feed on the Oculus Rift.
+Set outline indicator to smaller pixel width.
