@@ -254,7 +254,7 @@ int main(int argc, char** argv)
 	
 	VideoCapture cap(0); //capture the video from webcam
 
-	cap.set(CV_CAP_PROP_FRAME_WIDTH, 1280);	//TODO: This res might be too high.
+	cap.set(CV_CAP_PROP_FRAME_WIDTH, 1280);
 	cap.set(CV_CAP_PROP_FRAME_HEIGHT, 720);
 
 	FRAME_HEIGHT = cap.get(3);

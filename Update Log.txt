@@ -2,6 +2,10 @@ TODO: Restart and close all applications before demo.
 TODO: Invert color of outline indicator.
 TODO: Gray out
 ---------------------------------------------------------------------------------------------------------------------
+8/7/2014 5:21 AM PST (PUSHED TO GITHUB)
+
+Removed comment from main.cpp
+---------------------------------------------------------------------------------------------------------------------
 8/7/2014 5:12 AM PST (PUSHED TO GITHUB)
 
 Added README
