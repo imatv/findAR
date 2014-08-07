@@ -2,6 +2,11 @@ TODO: Restart and close all applications before demo.
 TODO: Invert color of outline indicator.
 TODO: Gray out
 ---------------------------------------------------------------------------------------------------------------------
+8/7/2014 5:12 AM PST (PUSHED TO GITHUB)
+
+Added README
+Removed vcproj and prop files from repo.
+---------------------------------------------------------------------------------------------------------------------
 8/7/2014 4:25 AM PST (PUSHED TO GITHUB)
 
 Imported OpenCV libraries.
