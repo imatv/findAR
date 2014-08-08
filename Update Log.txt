@@ -2,6 +2,11 @@ TODO: Restart and close all applications before demo.
 TODO: Invert color of outline indicator.
 TODO: Gray out
 ---------------------------------------------------------------------------------------------------------------------
+8/7/2014 7:40 PM PST (PUSHED TO GITHUB)
+
+Removed drawObject(), hexToHSV(), intToString().
+Fixed all the type cast warnings in our files.
+---------------------------------------------------------------------------------------------------------------------
 8/7/2014 6:42 PM PST (PUSHED TO GITHUB)
 
 Removed "Calculate moments of threshold image"

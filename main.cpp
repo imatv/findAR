@@ -21,6 +21,8 @@ using namespace std;
 /// Function Prototypes
 // This function is automatically called whenever the user clicks the mouse in the window.
 void mouseEvent(int ievent, int x, int y, int flags, void* param);
+// Used for creating the red outlines.
+void trackFilteredObject(int &x, int &y, Mat threshold, Mat &cameraFeed);
 
 // Globals
 
@@ -50,95 +52,6 @@ int mouseX = -1;	// Position in the window that a user clicked the mouse button.
 int mouseY = -1;	//		"
 
 
-float* hexToHSV(int hexValue) {
-	float r, g, b, h, s, v;
-	r = ((hexValue >> 16) & 0xFF) / 255.0f;
-	g = ((hexValue >> 8) & 0xFF) / 255.0f;
-	b = ((hexValue)& 0xFF) / 255.0f;
-
-	cout << "Original hex value " << hexValue << endl;
-	cout << "Red: " << r * 255 << endl;
-	cout << "Green: " << g * 255 << endl;
-	cout << "Blue: " << b * 255 << endl;
-
-	float K = 0.f;
-
-	if (g < b)
-	{
-		std::swap(g, b);
-		K = -1.f;
-	}
-
-	if (r < g)
-	{
-		std::swap(r, g);
-		K = -2.f / 6.f - K;
-	}
-
-	float chroma = r - std::min(g, b);
-	h = fabs(K + (g - b) / (6.f * chroma + 1e-20f));
-	s = chroma / (r + 1e-20f);
-	v = r;
-
-	cout << "on GIMP scale" << endl;
-	cout << "Hue: " << h * 360 << endl;
-	cout << "Saturation: " << s * 100 << endl;
-	cout << "Value: " << v * 100 << endl;
-
-	static float hsv[3];
-
-	hsv[0] = h;
-	hsv[1] = s;
-	hsv[2] = v;
-
-	return hsv;
-}
-
-string intToString(int number){
-
-	std::stringstream ss;
-	ss << number;
-	return ss.str();
-}
-
-void drawObject(int x, int y, Mat &frame){
-
-	//use some of the openCV drawing functions to draw crosshairs
-	//on your tracked image!
-
-	//UPDATE:JUNE 18TH, 2013
-	//added 'if' and 'else' statements to prevent
-	//memory errors from writing off the screen (ie. (-25,-25) is not within the window!)
-
-	circle(frame, Point(x, y), 20, Scalar(0, 255, 0), 2);
-	if (y - 25>0)
-		line(frame, Point(x, y), Point(x, y - 25), Scalar(0, 255, 0), 2);
-	else line(frame, Point(x, y), Point(x, 0), Scalar(0, 255, 0), 2);
-	if (y + 25<frameheight)
-		line(frame, Point(x, y), Point(x, y + 25), Scalar(0, 255, 0), 2);
-	else line(frame, Point(x, y), Point(x, frameheight), Scalar(0, 255, 0), 2);
-	if (x - 25>0)
-		line(frame, Point(x, y), Point(x - 25, y), Scalar(0, 255, 0), 2);
-	else line(frame, Point(x, y), Point(0, y), Scalar(0, 255, 0), 2);
-	if (x + 25<framewidth)
-		line(frame, Point(x, y), Point(x + 25, y), Scalar(0, 255, 0), 2);
-	else line(frame, Point(x, y), Point(framewidth, y), Scalar(0, 255, 0), 2);
-
-	putText(frame, intToString(x) + "," + intToString(y), Point(x, y + 30), 1, 1, Scalar(0, 255, 0), 2);
-
-}
-
-void trackFilteredObject(int &x, int &y, Mat threshold, Mat &cameraFeed){
-	Mat temp;
-	threshold.copyTo(temp);
-	//these two vectors needed for output of findContours
-	vector< vector<Point> > contours;
-	vector<Vec4i> hierarchy;
-	//find contours of filtered image using openCV findContours function
-	findContours(temp, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
-	drawContours(cameraFeed, contours, -1, cv::Scalar(0, 0, 255), 3);
-}
-
 int main(int argc, char** argv)
 {
 	// Create a GUI window
@@ -149,8 +62,8 @@ int main(int argc, char** argv)
 	cap.set(CV_CAP_PROP_FRAME_WIDTH, 1280);
 	cap.set(CV_CAP_PROP_FRAME_HEIGHT, 720);
 
-	frameheight = cap.get(3);
-	framewidth = cap.get(4);
+	frameheight = int(cap.get(3));
+	framewidth = int(cap.get(4));
 
 	if (!cap.isOpened())  // if not success, exit program
 	{
@@ -196,12 +109,12 @@ int main(int argc, char** argv)
 		float ranges[6] = { hLow, sLow, vLow, hHigh, sHigh, vHigh };
 		
 		// Create arbitrary ranges of HSV for detection
-		int iLowH = ranges[0] * 179;
-		int iHighH = ranges[3] * 179;
-		int iLowS = ranges[1] * 255;
-		int iHighS = ranges[4] * 255;
-		int iLowV = ranges[2] * 255;
-		int iHighV = ranges[5] * 255;
+		int iLowH = int(ranges[0] * 179);
+		int iHighH = int(ranges[3] * 179);
+		int iLowS = int(ranges[1] * 255);
+		int iHighS = int(ranges[4] * 255);
+		int iLowV = int(ranges[2] * 255);
+		int iHighV = int(ranges[5] * 255);
 
 		Mat imgOriginal;
 
@@ -259,6 +172,19 @@ int main(int argc, char** argv)
 		//cvDestroyWindow(colorWheelTitle);
 	}
 	return 0;
+}
+
+// Used for creating the red oulines.
+void trackFilteredObject(int &x, int &y, Mat threshold, Mat &cameraFeed)
+{
+	Mat temp;
+	threshold.copyTo(temp);
+	//these two vectors needed for output of findContours
+	vector< vector<Point> > contours;
+	vector<Vec4i> hierarchy;
+	//find contours of filtered image using openCV findContours function
+	findContours(temp, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
+	drawContours(cameraFeed, contours, -1, cv::Scalar(0, 0, 255), 3);
 }
 
 // Used to get the HSV values when the mouse is moved.
