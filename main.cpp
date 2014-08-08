@@ -58,22 +58,19 @@ int main(int argc, char** argv)
 	cvNamedWindow(colorWheelTitle, 1);
 	
 	VideoCapture cap(0); //capture the video from webcam
-
+    
 	cap.set(CV_CAP_PROP_FRAME_WIDTH, 1280);
 	cap.set(CV_CAP_PROP_FRAME_HEIGHT, 720);
-
+    
 	frameheight = int(cap.get(3));
 	framewidth = int(cap.get(4));
-
+    
 	if (!cap.isOpened())  // if not success, exit program
 	{
 		cout << "Cannot open the web cam" << endl;
 		return -1;
 	}
-
-	int iLastX = -1;
-	int iLastY = -1;
-
+    
 	while (true)
 	{
 		float hsv[3] = { hue/179.0f, saturation/255.0f, brightness/255.0f };
@@ -86,7 +83,7 @@ int main(int argc, char** argv)
 		if (hHigh > 1) {
 			hHigh = 1;
 		}
-
+        
 		float sLow = hsv[1] - 0.25f;
 		if (sLow < 0) {
 			sLow = 0;
@@ -95,7 +92,7 @@ int main(int argc, char** argv)
 		if (sHigh > 1) {
 			sHigh = 1;
 		}
-
+        
 		float vLow = hsv[2] - 0.4f;
 		if (vLow < 0) {
 			vLow = 0;
@@ -113,64 +110,68 @@ int main(int argc, char** argv)
 		int iHighS = int(ranges[4] * 255);
 		int iLowV = int(ranges[2] * 255);
 		int iHighV = int(ranges[5] * 255);
-
+        
 		Mat imgOriginal;
-
+        
 		bool bSuccess = cap.read(imgOriginal); // read a new frame from video
-
+        
 		if (!bSuccess) //if not success, break loop
 		{
 			cout << "Cannot read a frame from video stream" << endl;
 			break;
 		}
-
+        
 		//Create grayscale image
 		Mat img_gray;
 		cvtColor(imgOriginal, img_gray, CV_RGB2GRAY);
-		Mat img_RGBgray;
-		cvtColor(img_gray, img_RGBgray, CV_GRAY2RGB);
-
+		//Mat img_RGBgray;
+		//cvtColor(img_gray, img_RGBgray, CV_GRAY2RGB);
+        
 		Mat imgHSV;
-
+        
 		cvtColor(imgOriginal, imgHSV, COLOR_BGR2HSV); //Convert the captured frame from BGR to HSV
-
+        
 		Mat imgThresholded;
-
+        
 		inRange(imgHSV, Scalar(iLowH, iLowS, iLowV), Scalar(iHighH, iHighS, iHighV), imgThresholded); //Threshold the image
-
+        
 		//morphological opening (removes small objects from the foreground)
-		erode(imgThresholded, imgThresholded, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)));
-		dilate(imgThresholded, imgThresholded, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)));
-
+		erode(imgThresholded, imgThresholded, getStructuringElement(MORPH_ELLIPSE, Size(10, 10)));
+		dilate(imgThresholded, imgThresholded, getStructuringElement(MORPH_ELLIPSE, Size(10, 10)));
+        
 		//morphological closing (removes small holes from the foreground)
-		dilate(imgThresholded, imgThresholded, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)));
-		erode(imgThresholded, imgThresholded, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)));
-
+		dilate(imgThresholded, imgThresholded, getStructuringElement(MORPH_ELLIPSE, Size(10, 10)));
+		erode(imgThresholded, imgThresholded, getStructuringElement(MORPH_ELLIPSE, Size(10, 10)));
+        
 		//Creating final filtered image
 		Mat img_invertThreshold;
 		bitwise_not(imgThresholded, img_invertThreshold);
 		Mat img_RGBThreshold;
 		cvtColor(img_invertThreshold, img_invertThreshold, CV_GRAY2RGB);
-		Mat img_invOriginal = Scalar::all(255) - imgOriginal;
-		Mat img_tmp = img_invOriginal + img_invertThreshold;
+        img_gray = img_gray + imgThresholded;
+        Mat img_grayRGB;
+        cvtColor(img_gray, img_grayRGB, CV_GRAY2RGB);
+        Mat img_tmp = imgOriginal + img_invertThreshold;
 		Mat img_res = Scalar::all(255) - img_tmp;
-		img_res = img_RGBgray + img_res;
-
+        
+        Mat img_final = img_grayRGB - img_res;
+        
 		int x = 0, y = 0;
-
+        
 		//Add indicator lines.
-		trackFilteredObject(x, y, imgThresholded, img_res);
-		imshow("Final", img_res); //show the final image
-
+		trackFilteredObject(x, y, imgThresholded, img_final);
+        //imshow("Final", img_res); //show the final image
+        imshow("Final", img_final);
+        
 		if (waitKey(30) == 27) //wait for 'esc' key press for 30ms. If 'esc' key is pressed, break loop
 		{
 			cout << "esc key is pressed by user" << endl;
 			break;
 		}
-
+        
 		// Allow the user to click on Hue chart to change the hue, or click on the color wheel to see a value.
 		cvSetMouseCallback(colorWheelTitle, &mouseEvent, 0);
-
+        
 		displayColorWheelHSV(hue, saturation, brightness, colorWheelTitle);
 	}
 	return 0;
@@ -197,7 +198,7 @@ void mouseEvent(int ievent, int x, int y, int flags, void* param)
 		mouseX = x;
 		mouseY = y;
 		//cout << mouseX << "," << mouseY << endl;
-
+        
 		// If they clicked on the Hue chart, select the new hue.
 		if (mouseY < HUE_HEIGHT) {
 			if (mouseX / 2 < HUE_RANGE) {	// Make sure its a valid Hue
