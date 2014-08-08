@@ -142,7 +142,7 @@ int main(int argc, char** argv)
 		//morphological closing (removes small holes from the foreground)
 		dilate(imgThresholded, imgThresholded, getStructuringElement(MORPH_ELLIPSE, Size(10, 10)));
 		erode(imgThresholded, imgThresholded, getStructuringElement(MORPH_ELLIPSE, Size(10, 10)));
-        
+
 		//Creating final filtered image
 		Mat img_invertThreshold;
 		bitwise_not(imgThresholded, img_invertThreshold);
