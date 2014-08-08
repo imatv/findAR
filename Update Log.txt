@@ -2,6 +2,17 @@ TODO: Restart and close all applications before demo.
 TODO: Invert color of outline indicator.
 TODO: Gray out
 ---------------------------------------------------------------------------------------------------------------------
+8/7/2014 6:42 PM PST (PUSHED TO GITHUB)
+
+Removed "Calculate moments of threshold image"
+Removed "Create a black image with the size as the camera output"
+Removed int hexValue and cout/cin statements with hexValue
+Removed "Capture a temporary image from the camera"
+Removed imgOriginal = imgOriginal + imgLines
+Created and displayed grayscale image
+Created binary image
+Changed windowMain to colorWheelTitle, also its title value
+---------------------------------------------------------------------------------------------------------------------
 8/7/2014 6:25 PM PST (PUSHED TO GITHUB)
 
 Organized the HSVColorWheel functions into a separate cpp/h file

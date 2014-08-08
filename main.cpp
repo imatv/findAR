@@ -37,7 +37,7 @@ enum CONSTANTS{
 	TILE_H = 60,        //     "
 };
 
-char *windowMain = "HSV Color Wheel. Click a color, or press ESC to quit";	// title of the window
+char *colorWheelTitle = "HSV Color Wheel";	// title of the window
 
 int framewidth = 680;
 int frameheight = 480;
@@ -142,7 +142,7 @@ void trackFilteredObject(int &x, int &y, Mat threshold, Mat &cameraFeed){
 int main(int argc, char** argv)
 {
 	// Create a GUI window
-	cvNamedWindow(windowMain, 1);
+	cvNamedWindow(colorWheelTitle, 1);
 	
 	VideoCapture cap(0); //capture the video from webcam
 
@@ -158,21 +158,8 @@ int main(int argc, char** argv)
 		return -1;
 	}
 
-	//int hexValue;
-
-	//cout << "Enter a hex color code: ";
-	//cin >> hexValue;
-
 	int iLastX = -1;
 	int iLastY = -1;
-
-	//Capture a temporary image from the camera
-	Mat imgTmp;
-	cap.read(imgTmp);
-
-	//Create a black image with the size as the camera output
-	Mat imgLines = Mat::zeros(imgTmp.size(), CV_8UC3);;
-
 
 	while (true)
 	{
@@ -226,6 +213,12 @@ int main(int argc, char** argv)
 			break;
 		}
 
+		//Create grayscale image
+		Mat img_gray;
+		cvtColor(imgOriginal, img_gray, CV_RGB2GRAY);
+		//Convert grayscale to binary
+		Mat img_bw = img_gray > 128;
+
 		Mat imgHSV;
 
 		cvtColor(imgOriginal, imgHSV, COLOR_BGR2HSV); //Convert the captured frame from BGR to HSV
@@ -242,33 +235,8 @@ int main(int argc, char** argv)
 		dilate(imgThresholded, imgThresholded, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)));
 		erode(imgThresholded, imgThresholded, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)));
 
-		//Calculate the moments of the thresholded image
-		/*Moments oMoments = moments(imgThresholded);
-
-		double dM01 = oMoments.m01;
-		double dM10 = oMoments.m10;
-		double dArea = oMoments.m00;
-
-		// if the area <= 10000, I consider that the there are no object in the image and it's because of the noise, the area is not zero
-		if (dArea > 10000)
-		{
-			//calculate the position of the ball
-			int posX = dM10 / dArea;
-			int posY = dM01 / dArea;
-
-			if (iLastX >= 0 && iLastY >= 0 && posX >= 0 && posY >= 0)
-			{
-				//Draw a red line from the previous point to the current point
-				line(imgLines, Point(posX, posY), Point(iLastX, iLastY), Scalar(0, 0, 255), 2);
-			}
-
-			iLastX = posX;
-			iLastY = posY;
-		}*/
-
 		imshow("Thresholded Image", imgThresholded); //show the thresholded image
-
-		imgOriginal = imgOriginal + imgLines;
+		imshow("Grayscale Image", img_gray); //show the grayscale image
 
 		int x = 0, y = 0;
 
@@ -282,13 +250,13 @@ int main(int argc, char** argv)
 		}
 
 		// Allow the user to click on Hue chart to change the hue, or click on the color wheel to see a value.
-		cvSetMouseCallback(windowMain, &mouseEvent, 0);
+		cvSetMouseCallback(colorWheelTitle, &mouseEvent, 0);
 
-		displayColorWheelHSV(hue, saturation, brightness, windowMain);
+		displayColorWheelHSV(hue, saturation, brightness, colorWheelTitle);
 
-		//	cvShowImage(windowMain, imageIn);
+		//	cvShowImage(colorWheelTitle, imageIn);
 		//cvWaitKey();
-		//cvDestroyWindow(windowMain);
+		//cvDestroyWindow(colorWheelTitle);
 	}
 	return 0;
 }
