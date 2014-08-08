@@ -1,6 +1,15 @@
 TODO: Restart and close all applications before demo.
-TODO: Invert color of outline indicator.
-TODO: Gray out
+TODO: Integrate Oculus output directly. (w/o Oculus Overlay)
+TODO: Myo armband user interface.
+TODO: Allow for different modes of filter.
+TODO: Face recognition.
+TODO: If many modes, create a menu to open each one.
+---------------------------------------------------------------------------------------------------------------------
+8/7/2014 8:55 PM PST (PUSHED TO GITHUB)
+
+Removed extra output (windows and cout).
+Implemented color on grayscale filter.
+Oculus findAR is now ready for demo.
 ---------------------------------------------------------------------------------------------------------------------
 8/7/2014 7:40 PM PST (PUSHED TO GITHUB)
 

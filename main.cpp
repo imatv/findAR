@@ -76,8 +76,6 @@ int main(int argc, char** argv)
 
 	while (true)
 	{
-		// Etiher call to hexToHSV() or give hsv float array.
-		//float *ranges = HSVRanges(hexToHSV(0x603B15));
 		float hsv[3] = { hue/179.0f, saturation/255.0f, brightness/255.0f };
 		
 		float hLow = hsv[0] - 0.07f;
@@ -129,8 +127,8 @@ int main(int argc, char** argv)
 		//Create grayscale image
 		Mat img_gray;
 		cvtColor(imgOriginal, img_gray, CV_RGB2GRAY);
-		//Convert grayscale to binary
-		Mat img_bw = img_gray > 128;
+		Mat img_RGBgray;
+		cvtColor(img_gray, img_RGBgray, CV_GRAY2RGB);
 
 		Mat imgHSV;
 
@@ -148,13 +146,21 @@ int main(int argc, char** argv)
 		dilate(imgThresholded, imgThresholded, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)));
 		erode(imgThresholded, imgThresholded, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)));
 
-		imshow("Thresholded Image", imgThresholded); //show the thresholded image
-		imshow("Grayscale Image", img_gray); //show the grayscale image
+		//Creating final filtered image
+		Mat img_invertThreshold;
+		bitwise_not(imgThresholded, img_invertThreshold);
+		Mat img_RGBThreshold;
+		cvtColor(img_invertThreshold, img_invertThreshold, CV_GRAY2RGB);
+		Mat img_invOriginal = Scalar::all(255) - imgOriginal;
+		Mat img_tmp = img_invOriginal + img_invertThreshold;
+		Mat img_res = Scalar::all(255) - img_tmp;
+		img_res = img_RGBgray + img_res;
 
 		int x = 0, y = 0;
 
-		trackFilteredObject(x, y, imgThresholded, imgOriginal);
-		imshow("Original", imgOriginal); //show the original image
+		//Add indicator lines.
+		trackFilteredObject(x, y, imgThresholded, img_res);
+		imshow("Final", img_res); //show the final image
 
 		if (waitKey(30) == 27) //wait for 'esc' key press for 30ms. If 'esc' key is pressed, break loop
 		{
@@ -166,10 +172,6 @@ int main(int argc, char** argv)
 		cvSetMouseCallback(colorWheelTitle, &mouseEvent, 0);
 
 		displayColorWheelHSV(hue, saturation, brightness, colorWheelTitle);
-
-		//	cvShowImage(colorWheelTitle, imageIn);
-		//cvWaitKey();
-		//cvDestroyWindow(colorWheelTitle);
 	}
 	return 0;
 }

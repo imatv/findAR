@@ -91,7 +91,6 @@ void displayColorWheelHSV(int hue, int saturation, int brightness, char *windowM
 	uchar R = *(uchar*)(imOfs + (255 - brightness + WHEEL_TOP)*rowSize + (saturation)* 3 + 2);	// Red
 	uchar G = *(uchar*)(imOfs + (255 - brightness + WHEEL_TOP)*rowSize + (saturation)* 3 + 1);	// Green
 	uchar B = *(uchar*)(imOfs + (255 - brightness + WHEEL_TOP)*rowSize + (saturation)* 3 + 0);	// Blue
-	std::cout << "H:" << hue << ", S:" << saturation << ", V:" << brightness << "  ->  R:" << (int)R << ", G:" << (int)G << ", B:" << (int)B << std::endl;
 
 	// Display the RGB image
 	cvShowImage(windowMain, imageRGB);
