@@ -12,10 +12,10 @@
 #include <fstream>		// for opening files in C++
 
 // Include OpenCV
-#include <cv.h>
-//#include <cvaux.h>
-#include <cxcore.h>
-#include <highgui.h>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv/cv.h>
+#include <opencv/cxcore.h>
+#include <opencv/cvaux.h>
 
 #include "ImageUtils.h"		// easy image cropping, resizing, rotating, etc
 

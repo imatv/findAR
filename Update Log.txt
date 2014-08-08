@@ -4,6 +4,14 @@ TODO: Myo armband user interface.
 TODO: Allow for different modes of filter.
 TODO: Face recognition.
 TODO: If many modes, create a menu to open each one.
+TODO: RESOLUTION for SPEED.
+---------------------------------------------------------------------------------------------------------------------
+8/8/2014 1:06 AM PST (PUSHED TO GITHUB)
+
+Moved some matrix initialization outside of while loop.
+Lowering the resolution is probably the best way to go for speeding up application.
+Removed the old version .dll files, deemed unnecessary.
+Changed some includes in imageUtils.cpp linking to updated opencv libraries.
 ---------------------------------------------------------------------------------------------------------------------
 8/8/2014 12:23 AM PST (PUSHED TO GITHUB)
 

@@ -59,8 +59,8 @@ int main(int argc, char** argv)
 	
 	VideoCapture cap(0); //capture the video from webcam
     
-	cap.set(CV_CAP_PROP_FRAME_WIDTH, 1280);
-	cap.set(CV_CAP_PROP_FRAME_HEIGHT, 720);
+	cap.set(CV_CAP_PROP_FRAME_WIDTH, 640);
+	cap.set(CV_CAP_PROP_FRAME_HEIGHT, 480);
     
 	frameheight = int(cap.get(3));
 	framewidth = int(cap.get(4));
@@ -70,7 +70,16 @@ int main(int argc, char** argv)
 		cout << "Cannot open the web cam" << endl;
 		return -1;
 	}
-    
+
+	Mat imgOriginal;
+	Mat img_gray;
+	Mat imgHSV;
+	Mat imgThresholded;
+	Mat img_invertThreshold;
+	Mat img_grayRGB;
+	Mat img_obj;
+	Mat img_final;
+
 	while (true)
 	{
 		float hsv[3] = { hue/179.0f, saturation/255.0f, brightness/255.0f };
@@ -111,8 +120,6 @@ int main(int argc, char** argv)
 		int iLowV = int(ranges[2] * 255);
 		int iHighV = int(ranges[5] * 255);
         
-		Mat imgOriginal;
-        
 		bool bSuccess = cap.read(imgOriginal); // read a new frame from video
         
 		if (!bSuccess) //if not success, break loop
@@ -122,16 +129,13 @@ int main(int argc, char** argv)
 		}
         
 		//Create grayscale image
-		Mat img_gray;
 		cvtColor(imgOriginal, img_gray, CV_RGB2GRAY);
         
-		Mat imgHSV;
+		//Convert the captured frame from BGR to HSV
+		cvtColor(imgOriginal, imgHSV, COLOR_BGR2HSV);
         
-		cvtColor(imgOriginal, imgHSV, COLOR_BGR2HSV); //Convert the captured frame from BGR to HSV
-        
-		Mat imgThresholded;
-        
-		inRange(imgHSV, Scalar(iLowH, iLowS, iLowV), Scalar(iHighH, iHighS, iHighV), imgThresholded); //Threshold the image
+		//Threshold the image
+		inRange(imgHSV, Scalar(iLowH, iLowS, iLowV), Scalar(iHighH, iHighS, iHighV), imgThresholded);
         
 		//morphological opening (removes small objects from the foreground)
 		erode(imgThresholded, imgThresholded, getStructuringElement(MORPH_ELLIPSE, Size(10, 10)));
@@ -142,15 +146,12 @@ int main(int argc, char** argv)
 		erode(imgThresholded, imgThresholded, getStructuringElement(MORPH_ELLIPSE, Size(10, 10)));
         
 		//Creating final filtered image
-		Mat img_invertThreshold;
 		bitwise_not(imgThresholded, img_invertThreshold);
 		cvtColor(img_invertThreshold, img_invertThreshold, CV_GRAY2RGB);
         img_gray = img_gray - imgThresholded;
-        Mat img_grayRGB;
         cvtColor(img_gray, img_grayRGB, CV_GRAY2RGB);
-        Mat img_obj = imgOriginal - img_invertThreshold;
-        
-        Mat img_final = img_grayRGB + img_obj;
+		img_obj = imgOriginal - img_invertThreshold;
+        img_final = img_grayRGB + img_obj;
         
 		//Add indicator lines.
 		trackFilteredObject(imgThresholded, img_final);
