@@ -5,6 +5,10 @@ TODO: Allow for different modes of filter.
 TODO: Face recognition.
 TODO: If many modes, create a menu to open each one.
 ---------------------------------------------------------------------------------------------------------------------
+8/7/2014 9:57 PM PST (PUSHED TO GITHUB)
+
+Changed size values in threshold image to reduce noise.
+---------------------------------------------------------------------------------------------------------------------
 8/7/2014 8:55 PM PST (PUSHED TO GITHUB)
 
 Removed extra output (windows and cout).
