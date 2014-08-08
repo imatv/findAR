@@ -2,6 +2,12 @@ TODO: Restart and close all applications before demo.
 TODO: Invert color of outline indicator.
 TODO: Gray out
 ---------------------------------------------------------------------------------------------------------------------
+8/7/2014 6:25 PM PST (PUSHED TO GITHUB)
+
+Organized the HSVColorWheel functions into a separate cpp/h file
+Removed trackbars from the color wheel.
+Had to leave the MouseEvent function in main because of scary function pointers.
+---------------------------------------------------------------------------------------------------------------------
 8/7/2014 5:21 AM PST (PUSHED TO GITHUB)
 
 Removed comment from main.cpp
