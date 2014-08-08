@@ -10,6 +10,6 @@ Developed by Alvin Vuong, Ethan Harte, and Yuki Pan.
 Original concept at \#HeroHacks. (August 2014)
 
 Technologies Used:
--C/C++
--OpenCV
--Oculus Overlay (Temporary)
+- C/C++
+- OpenCV
+- Oculus Overlay (Temporary)
