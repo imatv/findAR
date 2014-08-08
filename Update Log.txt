@@ -5,6 +5,11 @@ TODO: Allow for different modes of filter.
 TODO: Face recognition.
 TODO: If many modes, create a menu to open each one.
 ---------------------------------------------------------------------------------------------------------------------
+8/8/2014 12:23 AM PST (PUSHED TO GITHUB)
+
+Shortened code for creating final window.
+Changed prototype for trackFilteredObject().
+---------------------------------------------------------------------------------------------------------------------
 8/7/2014 11:16 PM PST (PUSHED TO GITHUB)
 
 Fixed object brightness bug in main.cpp

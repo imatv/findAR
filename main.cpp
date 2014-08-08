@@ -22,7 +22,7 @@ using namespace std;
 // This function is automatically called whenever the user clicks the mouse in the window.
 void mouseEvent(int ievent, int x, int y, int flags, void* param);
 // Used for creating the red outlines.
-void trackFilteredObject(int &x, int &y, Mat threshold, Mat &cameraFeed);
+void trackFilteredObject(Mat threshold, Mat &cameraFeed);
 
 // Globals
 
@@ -124,8 +124,6 @@ int main(int argc, char** argv)
 		//Create grayscale image
 		Mat img_gray;
 		cvtColor(imgOriginal, img_gray, CV_RGB2GRAY);
-		//Mat img_RGBgray;
-		//cvtColor(img_gray, img_RGBgray, CV_GRAY2RGB);
         
 		Mat imgHSV;
         
@@ -142,25 +140,20 @@ int main(int argc, char** argv)
 		//morphological closing (removes small holes from the foreground)
 		dilate(imgThresholded, imgThresholded, getStructuringElement(MORPH_ELLIPSE, Size(10, 10)));
 		erode(imgThresholded, imgThresholded, getStructuringElement(MORPH_ELLIPSE, Size(10, 10)));
-
+        
 		//Creating final filtered image
 		Mat img_invertThreshold;
 		bitwise_not(imgThresholded, img_invertThreshold);
-		Mat img_RGBThreshold;
 		cvtColor(img_invertThreshold, img_invertThreshold, CV_GRAY2RGB);
-        img_gray = img_gray + imgThresholded;
+        img_gray = img_gray - imgThresholded;
         Mat img_grayRGB;
         cvtColor(img_gray, img_grayRGB, CV_GRAY2RGB);
-        Mat img_tmp = imgOriginal + img_invertThreshold;
-		Mat img_res = Scalar::all(255) - img_tmp;
+        Mat img_obj = imgOriginal - img_invertThreshold;
         
-        Mat img_final = img_grayRGB - img_res;
-        
-		int x = 0, y = 0;
+        Mat img_final = img_grayRGB + img_obj;
         
 		//Add indicator lines.
-		trackFilteredObject(x, y, imgThresholded, img_final);
-        //imshow("Final", img_res); //show the final image
+		trackFilteredObject(imgThresholded, img_final);
         imshow("Final", img_final);
         
 		if (waitKey(30) == 27) //wait for 'esc' key press for 30ms. If 'esc' key is pressed, break loop
@@ -178,13 +171,15 @@ int main(int argc, char** argv)
 }
 
 // Used for creating the red oulines.
-void trackFilteredObject(int &x, int &y, Mat threshold, Mat &cameraFeed)
+void trackFilteredObject(Mat threshold, Mat &cameraFeed)
 {
 	Mat temp;
 	threshold.copyTo(temp);
+    
 	//these two vectors needed for output of findContours
 	vector< vector<Point> > contours;
 	vector<Vec4i> hierarchy;
+    
 	//find contours of filtered image using openCV findContours function
 	findContours(temp, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
 	drawContours(cameraFeed, contours, -1, cv::Scalar(0, 0, 255), 3);
