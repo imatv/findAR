@@ -6,7 +6,6 @@
 var UI = require('ui');
 var ajax = require('ajax');
 var Accel = require('ui/accel');
-var Vector2 = require('vector2');
 
 function init() {
   Accel.init();
@@ -21,8 +20,10 @@ init();
 function sendCmd(cmd) {
   var _cmd = cmd.toLowerCase().trim();
   
+  console.log('send cmd: ' + _cmd);
+  
   ajax({
-      url: 'http://dev.quasi.co/findar/in.php?cmd='+_cmd,
+      url: 'http://dev.quasi.co/findar/in.php?cmd='+encodeURIComponent(_cmd),
       cache: false
     },
     function(data) {
@@ -49,8 +50,7 @@ var main = new UI.Card({
 
 main.show();
 
-main.on('click', 'up', function(e) {
-  
+var handler = function() {
   var modesMenuItems = [{
               title: 'Original'
             },{
@@ -71,9 +71,9 @@ main.on('click', 'up', function(e) {
           }]});
   
   var colorMenuItems = [{
-              title: '+ Hue'
-            },{
               title: '- Hue'
+            },{
+              title: '+ Hue'
             },{
               title: '- Saturation'
             },{
@@ -180,25 +180,9 @@ main.on('click', 'up', function(e) {
   });
   
   menu.show();
-});
+};
 
-main.on('click', 'select', function(e) {
-  var wind = new UI.Window();
-  var textfield = new UI.Text({
-    position: new Vector2(0, 50),
-    size: new Vector2(144, 30),
-    font: 'gothic-24-bold',
-    text: 'Text Anywhere!',
-    textAlign: 'center'
-  });
-  wind.add(textfield);
-  wind.show();
-});
+main.on('click', 'up', handler);
+main.on('click', 'select', handler);
+main.on('click', 'down', handler);
 
-main.on('click', 'down', function(e) {
-  var card = new UI.Card();
-  card.title('A Card');
-  card.subtitle('Is a Window');
-  card.body('The simplest window type in Pebble.js.');
-  card.show();
-});

@@ -1,0 +1,116 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, user-scalable=no">
+<title>findAR</title>
+<link href='http://fonts.googleapis.com/css?family=Roboto:400,300,500' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="jquery.colorpickersliders.css">
+<style>
+body {
+  font-family: 'Roboto', Arial, sans-serif;
+  font-size: 20px;
+  line-height: 26px;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+}
+
+h1 {
+  font-weight: 300;
+  font-size: 50px;
+  line-height: 50px;
+  margin: 10px 0px 2px;
+}
+
+h2 {
+  font-weight: 300;
+  font-size: 20px;
+  line-height: 20px;
+  margin: 0px 0px 24px;
+}
+
+#container {
+  margin: 10px;
+}
+
+.cmd {
+  font-size: 20px;
+  padding: 10px;
+  margin: 4px;
+  border: 1px solid black;
+  text-align: center;
+}
+
+.cmd:hover, .cmd.selected {
+  cursor: pointer;
+  background-color: #ddd;
+}
+
+.hsl-demo, .cp-container {
+  margin-top: 20px;
+}
+</style>
+</head>
+<body>
+
+<div id="container">
+  <h1>findAR</h1>
+  <h2>Oh, there you AR.</h2>
+
+  <div class="cmd">Original</div>
+  <div class="cmd">Outline</div>
+  <div class="cmd">Grayscale</div>
+  <div class="cmd">B/W</div>
+  <div class="cmd">Sepia</div>
+  <div class="cmd">Hue Scan</div>
+
+  <span class="hsl-demo"></span>
+
+</div>
+
+<script src="http://code.jquery.com/jquery-2.1.1.min.js"></script>
+<script src="tinycolor.js"></script>
+<script src="jquery.colorpickersliders.js"></script>
+<script>
+
+function init() {
+
+  $('.cmd').on('click', function(e) {
+    var $this = $(this);
+    var _cmd = $this.text().toLowerCase();
+
+    $('.cmd').removeClass('selected');
+    $this.addClass('selected');
+
+    console.log(_cmd);
+    sendCmd(_cmd);
+  });
+
+  $(".hsl-demo").ColorPickerSliders({
+            flat: true,
+            previewformat: 'hsl',
+            order: {
+                hsl: 1,
+                preview: 2
+            },
+            onchange: function(container, color) {
+               var hsl = color.tiny.toHsl();
+               var cmd = 'hsl:'+[Math.round(hsl.h), Math.round(hsl.s*100), Math.round(hsl.l*100)].join(',');
+               sendCmd(cmd);
+            }
+   });
+
+}
+
+function sendCmd(_cmd) {
+  $.get('http://dev.quasi.co/findar/in.php?cmd='+encodeURIComponent(_cmd), function(resp){ 
+    console.log(resp);
+  });
+}
+
+init();
+</script>
+</body>
+</html>
+
