@@ -5,7 +5,6 @@
 #include <opencv/cv.h>
 #include <opencv/cxcore.h>
 #include <iostream>
-#include "ImageUtils.h"		// easy image cropping, resizing, rotating, etc
 
 enum CONSTANTS{
 	WIDTH = 361,        // Window Size

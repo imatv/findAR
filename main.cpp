@@ -13,7 +13,6 @@
 #include <opencv/cvaux.h>
 #include <opencv/cv.h>
 #include <opencv/cxcore.h>
-#include "ImageUtils.h"		// easy image cropping, resizing, rotating, etc
 
 using namespace cv;
 using namespace std;
