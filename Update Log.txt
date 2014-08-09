@@ -6,6 +6,11 @@ TODO: Face recognition.
 TODO: If many modes, create a menu to open each one.
 TODO: RESOLUTION for SPEED.
 ---------------------------------------------------------------------------------------------------------------------
+8/9/2014 6:14 AM PST (PUSHED TO GITHUB)
+
+Switched facial algorithm to LBPH. Improved performance.
+Might need more training examples to be robust.
+---------------------------------------------------------------------------------------------------------------------
 8/9/2014 5:04 AM PST (PUSHED TO GITHUB)
 
 Integrated code for facial recognition. (Still needs tweaking).

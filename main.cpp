@@ -129,6 +129,7 @@ bool bounce = false;
 int main(int argc, char** argv)
 {
 	// START TRAINING
+	cout << "START TRAINING" << endl;
 	// Get the path to your CascadeClassifier and CSV:
 	string fn_haar = "C:/Users/Alvin/Desktop/opencv/sources/data/haarcascades/haarcascade_frontalface_default.xml";
 	string fn_csv = "C:/Users/Alvin/Desktop/findAR/facescsv.txt"; // Change to work
@@ -150,9 +151,29 @@ int main(int argc, char** argv)
 	// size AND we need to reshape incoming faces to this size:
 	int im_width = images[0].cols;
 	int im_height = images[0].rows;
-	// Create a FaceRecognizer and train it on the given images:
-	Ptr<FaceRecognizer> model = createFisherFaceRecognizer();
-
+	// The following lines create an LBPH model for
+	// face recognition and train it with the images and
+	// labels read from the given CSV file.
+	//
+	// The LBPHFaceRecognizer uses Extended Local Binary Patterns
+	// (it's probably configurable with other operators at a later
+	// point), and has the following default values
+	//
+	//      radius = 1
+	//      neighbors = 8
+	//      grid_x = 8
+	//      grid_y = 8
+	//
+	// So if you want a LBPH FaceRecognizer using a radius of
+	// 2 and 16 neighbors, call the factory method with:
+	//
+	//      cv::createLBPHFaceRecognizer(2, 16);
+	//
+	// And if you want a threshold (e.g. 123.0) call it with its default values:
+	//
+	//      cv::createLBPHFaceRecognizer(1,8,8,8,123.0)
+	//
+	Ptr<FaceRecognizer> model = createLBPHFaceRecognizer();
 	model->train(images, labels);
 	// That's it for learning the Face Recognition model. You now
 	// need to create the classifier for the task of Face Detection.
@@ -161,6 +182,7 @@ int main(int argc, char** argv)
 	//
 	CascadeClassifier haar_cascade;
 	haar_cascade.load(fn_haar);
+	cout << "END TRAINING" << endl;
 	// END TRAINING
 
 	// Create a GUI window
