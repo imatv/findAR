@@ -6,6 +6,11 @@ TODO: Face recognition.
 TODO: If many modes, create a menu to open each one.
 TODO: RESOLUTION for SPEED.
 ---------------------------------------------------------------------------------------------------------------------
+8/8/2014 7:40 PM PST (PUSHED TO GITHUB)
+
+Changed color thresholds.
+Deleted ImageUtils module.
+---------------------------------------------------------------------------------------------------------------------
 8/8/2014 1:42 PM PST (PUSHED TO GITHUB)
 
 Edited README.

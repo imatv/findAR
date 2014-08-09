@@ -59,8 +59,8 @@ int main(int argc, char** argv)
 	
 	VideoCapture cap(0); //capture the video from webcam
     
-	cap.set(CV_CAP_PROP_FRAME_WIDTH, 640);
-	cap.set(CV_CAP_PROP_FRAME_HEIGHT, 480);
+	//cap.set(CV_CAP_PROP_FRAME_WIDTH, 640);
+	//cap.set(CV_CAP_PROP_FRAME_HEIGHT, 480);
     
 	frameheight = int(cap.get(3));
 	framewidth = int(cap.get(4));
@@ -70,7 +70,7 @@ int main(int argc, char** argv)
 		cout << "Cannot open the web cam" << endl;
 		return -1;
 	}
-
+    
 	Mat imgOriginal;
 	Mat img_gray;
 	Mat imgHSV;
@@ -79,25 +79,25 @@ int main(int argc, char** argv)
 	Mat img_grayRGB;
 	Mat img_obj;
 	Mat img_final;
-
+    
 	while (true)
 	{
 		float hsv[3] = { hue/179.0f, saturation/255.0f, brightness/255.0f };
 		
-		float hLow = hsv[0] - 0.07f;
+		float hLow = hsv[0] - 0.12f;
 		if (hLow < 0) {
 			hLow = 0;
 		}
-		float hHigh = hsv[0] + 0.07f;
+		float hHigh = hsv[0] + 0.12f;
 		if (hHigh > 1) {
 			hHigh = 1;
 		}
         
-		float sLow = hsv[1] - 0.25f;
+		float sLow = hsv[1] - 0.3f;
 		if (sLow < 0) {
 			sLow = 0;
 		}
-		float sHigh = hsv[1] + 0.25f;
+		float sHigh = hsv[1] + 0.3f;
 		if (sHigh > 1) {
 			sHigh = 1;
 		}
