@@ -11,7 +11,10 @@ function init() {
   Accel.init();
   
   Accel.on('tap', function(e) {
-    sendCmd('Hue Scan');
+    if (e.direction < 0)
+      sendCmd('Face Scan');
+    else
+      sendCmd('Face Detect');
     console.log('Tap event on axis: ' + e.axis + ' and direction: ' + e.direction);
   });
 }
@@ -90,6 +93,18 @@ var handler = function() {
           }]
         });
   
+  var faceMenuItems = [{
+    title: 'Face Detect' 
+  },{
+    title: 'Face Scan'
+  }];
+  var faceMenu = new UI.Menu({
+    name: 'faces',
+      sections: [{
+        items: faceMenuItems
+      }]
+  });
+  
   // top level menu
   var _items = [{
         title: 'Modes',
@@ -101,6 +116,12 @@ var handler = function() {
         subtitle: 'Choose wisely',
         card: null,
         menu: colorMenu
+      },
+      {
+        title: 'Faces',
+        subtitle: 'Track \'em',
+        card: null,
+        menu: faceMenu
       },
       {
         title: 'Extra',
@@ -136,6 +157,16 @@ var handler = function() {
     
     var it = colorMenuItems[ev.item];
     
+    console.log(it.title);
+    
+    sendCmd(it.title);
+  });
+  
+  faceMenu.on('select', function(ev){
+    console.log(printObject(ev));
+    console.log('selected item #: ' + ev.item);
+    
+    var it = faceMenuItems[ev.item];
     console.log(it.title);
     
     sendCmd(it.title);
@@ -185,4 +216,3 @@ var handler = function() {
 main.on('click', 'up', handler);
 main.on('click', 'select', handler);
 main.on('click', 'down', handler);
-
