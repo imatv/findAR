@@ -6,6 +6,10 @@ TODO: Face recognition.
 TODO: If many modes, create a menu to open each one.
 TODO: RESOLUTION for SPEED.
 ---------------------------------------------------------------------------------------------------------------------
+8/9/2014 5:04 AM PST (PUSHED TO GITHUB)
+
+Integrated code for facial recognition. (Still needs tweaking).
+---------------------------------------------------------------------------------------------------------------------
 8/9/2014 4:14 AM PST (PUSHED TO GITHUB)
 
 Added modes and preparing for web socket integration for data transfer from Pebble.

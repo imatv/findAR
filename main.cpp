@@ -1,10 +1,34 @@
+/*
+* Copyright (c) 2011. Philipp Wagner <bytefish[at]gmx[dot]de>.
+* Released to public domain under terms of the BSD Simplified license.
+*
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions are met:
+*   * Redistributions of source code must retain the above copyright
+*     notice, this list of conditions and the following disclaimer.
+*   * Redistributions in binary form must reproduce the above copyright
+*     notice, this list of conditions and the following disclaimer in the
+*     documentation and/or other materials provided with the distribution.
+*   * Neither the name of the organization nor the names of its contributors
+*     may be used to endorse or promote products derived from this software
+*     without specific prior written permission.
+*
+*   See <http://www.opensource.org/licenses/bsd-license>
+*/
+// ^ For facial recognition features...
+
+// /usr/local/cellar/opencv-2.4.9/data/haarcascades/haarcascade_frontalface_default.xml
+
 #define WIN32_LEAN_AND_MEAN // Exclude rarely-used stuff from Windows headers
 
+// Include standard libraries
 #include <cstdio>	// Used for "printf"
 #include <string>	// Used for C++ strings
 #include <stdlib.h>
 #include <stdio.h>
 #include <iostream>	// Used for C++ cout print statements
+#include <fstream>
+#include <sstream>
 
 // User libraries included here.
 #include "HSVColorWheel.h"
@@ -12,11 +36,15 @@
 // Include OpenCV libraries
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui/highgui.hpp>
-#include "opencv2/imgproc/imgproc.hpp"
+#include <opencv2/imgproc/imgproc.hpp>
 #include <opencv/cvaux.h>
 #include <opencv/cv.h>
 #include <opencv/cxcore.h>
+#include <opencv2/core/core.hpp>
+#include <opencv2/contrib/contrib.hpp>
+#include <opencv2/objdetect/objdetect.hpp>
 
+// Namespaces
 using namespace cv;
 using namespace std;
 
@@ -29,6 +57,10 @@ void trackFilteredObject(Mat threshold, Mat &cameraFeed);
 Mat calcColorPick(Mat imgOriginal);
 // Calculates image for OUTLINE
 Mat calcOutline(Mat imgOriginal);
+// Used for facial rec data
+static void read_csv(const string& filename, vector<Mat>& images, vector<int>& labels, char separator = ';');
+// Calculates facial rec frame
+Mat calcFace(Mat imgOriginal, CascadeClassifier haar_cascade, int im_width, int im_height, Ptr<FaceRecognizer> model);
 
 // Globals
 
@@ -46,7 +78,7 @@ enum CONSTANTS{
 };
 
 enum MODES{
-	ERROR = 0,
+	MODE_ERROR = 0,
 	ORIGINAL,
 	OUTLINE,
 	GRAY,
@@ -96,6 +128,41 @@ bool bounce = false;
 
 int main(int argc, char** argv)
 {
+	// START TRAINING
+	// Get the path to your CascadeClassifier and CSV:
+	string fn_haar = "C:/Users/Alvin/Desktop/opencv/sources/data/haarcascades/haarcascade_frontalface_default.xml";
+	string fn_csv = "C:/Users/Alvin/Desktop/findAR/facescsv.txt"; // Change to work
+	int deviceId = 0;
+	// These vectors hold the images and corresponding labels:
+	vector<Mat> images;
+	vector<int> labels;
+	// Read in the data (fails if no valid input filename is given, but you'll get an error message):
+	try {
+		read_csv(fn_csv, images, labels);
+	}
+	catch (cv::Exception& e) {
+		cerr << "Error opening file \"" << fn_csv << "\". Reason: " << e.msg << endl;
+		// nothing more we can do
+		exit(1);
+	}
+	// Get the height from the first image. We'll need this
+	// later in code to reshape the images to their original
+	// size AND we need to reshape incoming faces to this size:
+	int im_width = images[0].cols;
+	int im_height = images[0].rows;
+	// Create a FaceRecognizer and train it on the given images:
+	Ptr<FaceRecognizer> model = createFisherFaceRecognizer();
+
+	model->train(images, labels);
+	// That's it for learning the Face Recognition model. You now
+	// need to create the classifier for the task of Face Detection.
+	// We are going to use the haar cascade you have specified in the
+	// command line arguments:
+	//
+	CascadeClassifier haar_cascade;
+	haar_cascade.load(fn_haar);
+	// END TRAINING
+
 	// Create a GUI window
 	cvNamedWindow(colorWheelTitle, 1);
 	
@@ -126,7 +193,7 @@ int main(int argc, char** argv)
 			break;
 		}
 
-		int mode = 7;
+		int mode = 9;
 		/*
 		mode = getMode(); //get mode from pebble
 
@@ -179,15 +246,16 @@ int main(int argc, char** argv)
 			img_final = calcColorPick(imgOriginal);
 			break;
 		case FACE:
+			img_final = calcFace(imgOriginal, haar_cascade, im_width, im_height, model);
 			break;
-		case ERROR:
+		case MODE_ERROR:
 		default:
 			cout << "Hit break statement ERROR" << endl;
 			exit(1);
 			break;
 		}
 		
-		imshow("Final", img_final); //show the chosen image
+		cv::imshow("Final", img_final); //show the chosen image
         
 		if (waitKey(30) == 27) //wait for 'esc' key press for 30ms. If 'esc' key is pressed, break loop
 		{
@@ -332,4 +400,93 @@ Mat calcOutline(Mat imgOriginal)
 
 	imgOriginal.copyTo(dst, detected_edges);
 	return dst;
+}
+
+static void read_csv(const string& filename, vector<Mat>& images, vector<int>& labels, char separator) {
+	std::ifstream file(filename.c_str(), ifstream::in);
+	if (!file) {
+		string error_message = "No valid input file was given, please check the given filename.";
+		CV_Error(CV_StsBadArg, error_message);
+	}
+	string line, path, classlabel;
+	while (getline(file, line)) {
+		stringstream liness(line);
+		getline(liness, path, separator);
+		getline(liness, classlabel);
+		if (!path.empty() && !classlabel.empty()) {
+			images.push_back(imread(path, 0));
+			labels.push_back(atoi(classlabel.c_str()));
+		}
+	}
+}
+
+Mat calcFace(Mat imgOriginal, CascadeClassifier haar_cascade, int im_width, int im_height, Ptr<FaceRecognizer> model)
+{
+	// Convert the current frame to grayscale:
+	cvtColor(imgOriginal, img_gray, CV_BGR2GRAY);
+	// Find the faces in the frame:
+	vector< Rect_<int> > faces;
+	haar_cascade.detectMultiScale(img_gray, faces);
+	// At this point you have the position of the faces in
+	// faces. Now we'll get the faces, make a prediction and
+	// annotate it in the video. Cool or what?
+	for (int i = 0; i < faces.size(); i++) {
+		// Process face by face:
+		Rect face_i = faces[i];
+		// Crop the face from the image. So simple with OpenCV C++:
+		Mat face = img_gray(face_i);
+		// Resizing the face is necessary for Eigenfaces and Fisherfaces. You can easily
+		// verify this, by reading through the face recognition tutorial coming with OpenCV.
+		// Resizing IS NOT NEEDED for Local Binary Patterns Histograms, so preparing the
+		// input data really depends on the algorithm used.
+		//
+		// I strongly encourage you to play around with the algorithms. See which work best
+		// in your scenario, LBPH should always be a contender for robust face recognition.
+		//
+		// Since I am showing the Fisherfaces algorithm here, I also show how to resize the
+		// face you have just found:
+		Mat face_resized;
+		cv::resize(face, face_resized, Size(im_width, im_height), 1.0, 1.0, INTER_CUBIC);
+		// Now perform the prediction, see how easy that is:
+		double predict_confidence = 0.0;
+		int prediction = -1;
+		model->predict(face_resized, prediction, predict_confidence);
+		string name;
+		string box_text;
+
+		cout << prediction << endl;
+		cout << predict_confidence << endl;
+
+		// Calculate the position for annotated text (make sure we don't
+		// put illegal values in there):
+		int pos_x = std::max(face_i.tl().x - 10, 0);
+		int pos_y = std::max(face_i.tl().y - 10, 0);
+
+		// And finally write all we've found out to the original image!
+		// First of all draw a green rectangle around the detected face:
+		rectangle(imgOriginal, face_i, CV_RGB(0, 255, 0), 1);
+
+		if (predict_confidence > 0) {
+			if (prediction == 0) {
+				name = "Yuki";
+			}
+			else if (prediction == 1) {
+				name = "Alvin";
+			}
+			else if (prediction == 2) {
+				name = "Ethan";
+			}
+			else {
+				name = "NOT RECOGNIZED";
+			}
+			// Create the text we will annotate the box with:
+			box_text = "Prediction: " + name;
+		}
+		else {
+			box_text = "???";
+		}
+		putText(imgOriginal, box_text, Point(pos_x, pos_y), FONT_HERSHEY_PLAIN, 1.0, CV_RGB(0, 255, 0), 2.0);
+	}
+	// Show the result:
+	return imgOriginal;
 }
