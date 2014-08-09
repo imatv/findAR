@@ -45,7 +45,7 @@
 #include <opencv2/objdetect/objdetect.hpp>
 
 // For curl library to read from http site for data from Pebble
-#include <curl/curl.h> 
+#include <curl/curl.h>
 
 // Namespaces
 using namespace cv;
@@ -66,6 +66,10 @@ static void read_csv(const string& filename, vector<Mat>& images, vector<int>& l
 Mat calcFace(Mat imgOriginal, CascadeClassifier haar_cascade, int im_width, int im_height, Ptr<FaceRecognizer> model);
 // Some curl function
 size_t curl_write(void *ptr, size_t size, size_t nmemb, void *stream);
+// Handling Pebble app string
+int getMode(std::string buf);
+// facial detect frame
+Mat calcFaceDetect(Mat imgOriginal, CascadeClassifier haar_cascade, int im_width, int im_height, Ptr<FaceRecognizer> model);
 
 // Globals
 
@@ -89,12 +93,14 @@ enum MODES{
 	GRAY,
 	BW,
 	SEPIA,
-	CENSOR,
 	HUE,
 	//More filters go here.
 	COLOR_PICK,
 	FACE,
+	FACE_DETECT,
 };
+
+int last_mode = 1;
 
 char *colorWheelTitle = "HSV Color Wheel";	// title of the window
 
@@ -133,6 +139,17 @@ bool bounce = false;
 
 // HTML String
 std::string buffer;
+String h;
+String s;
+String v;
+char separator = ',';
+char beginning = ':';
+bool start = false;
+bool nextNum = false;
+bool next2Num = false;
+
+int mode = 1;
+int counter = 0;
 
 int main(int argc, char** argv)
 {
@@ -181,7 +198,7 @@ int main(int argc, char** argv)
 	//
 	//      cv::createLBPHFaceRecognizer(1,8,8,8,123.0)
 	//
-	Ptr<FaceRecognizer> model = createLBPHFaceRecognizer();
+	Ptr<FaceRecognizer> model = createEigenFaceRecognizer();
 	model->train(images, labels);
 	// That's it for learning the Face Recognition model. You now
 	// need to create the classifier for the task of Face Detection.
@@ -213,14 +230,6 @@ int main(int argc, char** argv)
 	Mat imgOriginal;
 	Mat img_final;
 
-	// Set initial mode and set curl URL
-	CURL *curl = curl_easy_init();
-	curl_easy_setopt(curl, CURLOPT_URL, "http://dev.quasi.co/findar/");
-	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_write);
-	curl_easy_perform(curl);
-	curl_easy_cleanup(curl);
-	fwrite(buffer.c_str(), buffer.length(), sizeof(char), stdout);
-    
 	while (true)
 	{
 		bool bSuccess = cap.read(imgOriginal); // read a new frame from video
@@ -230,20 +239,23 @@ int main(int argc, char** argv)
 			std::cout << "Cannot read a frame from video stream" << endl;
 			break;
 		}
+		counter++;
+		if (counter == 100 || (mode == FACE && counter >= 10) || (mode == COLOR_PICK && counter >= 20)) //delay to reduce latency
+		{
+			//curl request from web server
+			CURL *curl = curl_easy_init();
+			curl_easy_setopt(curl, CURLOPT_URL, "http://dev.quasi.co/findar/");
+			curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_write);
+			curl_easy_perform(curl);
+			curl_easy_cleanup(curl);
+			counter = 0;
+		}
 
-		int mode = 9;
-		
-		//curl request from web server
-		//curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_write);
-		//curl_easy_perform(curl);
-		//curl_easy_cleanup(curl);
-		//fwrite(buffer.c_str(), buffer.length(), sizeof(char), stdout);
-
-		//mode = getMode(buffer); //get mode from pebble
+		mode = getMode(buffer); //get mode from pebble
 
 		if (!mode)
 		{
-			cout << "Cannot get mode from pebble" << endl;
+			std::cout << "Cannot get mode from pebble" << endl;
 			break;
 		}
 
@@ -251,23 +263,26 @@ int main(int argc, char** argv)
 		{
 		case ORIGINAL:
 			img_final = imgOriginal;
+			last_mode = ORIGINAL;
 			break;
 		case OUTLINE:
 			img_final = calcOutline(imgOriginal);
+			last_mode = OUTLINE;
 			break;
 		case GRAY:
 			// Convert the image to grayscale
 			cv::cvtColor(imgOriginal, img_gray, CV_BGR2GRAY);
 			cv::cvtColor(img_gray, img_final, CV_GRAY2BGR);
+			last_mode = GRAY;
 			break;
 		case BW:
 			cv::cvtColor(imgOriginal, img_gray, CV_RGB2GRAY);
 			img_final = img_gray > 128;
+			last_mode = BW;
 			break;
 		case SEPIA:
 			transform(imgOriginal, img_final, kern);
-			break;
-		case CENSOR:
+			last_mode = SEPIA;
 			break;
 		case HUE:
 			cv::cvtColor(imgOriginal, imgHSV, CV_RGB2HSV);
@@ -283,23 +298,30 @@ int main(int argc, char** argv)
 				bounce = false;
 			merge(hsv_planes, imgOriginal);
 			img_final = imgOriginal;
+			last_mode = HUE;
 			break;
 		//More filters go here.
 		case COLOR_PICK:
 			img_final = calcColorPick(imgOriginal);
+			last_mode = COLOR_PICK;
 			break;
 		case FACE:
 			img_final = calcFace(imgOriginal, haar_cascade, im_width, im_height, model);
+			last_mode = FACE;
+			break;
+		case FACE_DETECT:
+			img_final = calcFaceDetect(imgOriginal, haar_cascade, im_width, im_height, model);
 			break;
 		case MODE_ERROR:
 		default:
-			std::cout << "Hit break statement ERROR" << endl;
+			cout << "default break ERROR" << endl;
 			exit(1);
 			break;
 		}
 		
 		cv::imshow("Final", img_final); //show the chosen image
-        
+		buffer = ""; //reset buffer to get new input from Pebble
+
 		if (waitKey(30) == 27) //wait for 'esc' key press for 30ms. If 'esc' key is pressed, break loop
 		{
 			std::cout << "esc key is pressed by user" << endl;
@@ -519,7 +541,9 @@ Mat calcFace(Mat imgOriginal, CascadeClassifier haar_cascade, int im_width, int 
 			else if (prediction == 2) {
 				name = "Ethan";
 			}
-			else {
+			else if (prediction == 3) {
+				name = "Mike";
+			} else {
 				name = "NOT RECOGNIZED";
 			}
 			// Create the text we will annotate the box with:
@@ -534,6 +558,27 @@ Mat calcFace(Mat imgOriginal, CascadeClassifier haar_cascade, int im_width, int 
 	return imgOriginal;
 }
 
+Mat calcFaceDetect(Mat imgOriginal, CascadeClassifier haar_cascade, int im_width, int im_height, Ptr<FaceRecognizer> model)
+{
+	// Convert the current frame to grayscale:
+	cvtColor(imgOriginal, img_gray, CV_BGR2GRAY);
+	// Find the faces in the frame:
+	vector< Rect_<int> > faces;
+	haar_cascade.detectMultiScale(img_gray, faces);
+	// At this point you have the position of the faces in
+	// faces. Now we'll get the faces, make a prediction and
+	// annotate it in the video. Cool or what?
+	for (int i = 0; i < faces.size(); i++) {
+		// Process face by face:
+		Rect face_i = faces[i];
+		// And finally write all we've found out to the original image!
+		// First of all draw a green rectangle around the detected face:
+		rectangle(imgOriginal, face_i, CV_RGB(0, 255, 0), 1);
+	}
+	// Show the result:
+	return imgOriginal;
+}
+
 // This is the callback function that is called by curl_easy_perform(curl) 
 size_t curl_write(void *ptr, size_t size, size_t nmemb, void *stream)
 {
@@ -543,11 +588,108 @@ size_t curl_write(void *ptr, size_t size, size_t nmemb, void *stream)
 
 int getMode(std::string buf)
 {
-	int mode = 0;
-	if (buf == "null")
-	{
-		//mode = MODE_ERROR;
+	std::cout << buf << endl;
+	if (!buf.compare("null") || buf == "")
+		return mode;
+	if (!buf.compare("original"))
 		mode = ORIGINAL;
+	else if (!buf.compare("outline"))
+		mode = OUTLINE;
+	else if (!buf.compare("grayscale"))
+		mode = GRAY;
+	else if (buf == "b/w")
+		mode = BW;
+	else if (buf == "sepia")
+		mode = SEPIA;
+	else if (buf == "hue scan")
+		mode = HUE;
+	else if (buf == "face scan")
+		mode = FACE;
+	else if (buf == "face detect")
+		mode = FACE_DETECT;
+	else if (buf.size() > 0)
+	{
+		mode = COLOR_PICK;
+		char first = buf[0];
+		if (first == '+' || first == '-')
+		{
+			if (buf == "+ hue")
+			{
+				hue += 12;
+				if (hue > 179)
+					hue = 179;
+			}
+			else if (buf == "+ saturation")
+			{
+				saturation += 16;
+				if (saturation > 255)
+					saturation = 255;
+			}
+			else if (buf == "+ lightness")
+			{
+				brightness += 16;
+				if (brightness > 255)
+					brightness = 255;
+			}
+			else if (buf == "- hue")
+			{
+				hue -= 12;
+				if (hue < 0)
+					hue = 0;
+			}
+			else if (buf == "- saturation")
+			{
+				saturation -= 16;
+				if (saturation < 0)
+					saturation = 0;
+			}
+			else if (buf == "- lightness")
+			{
+				brightness -= 16;
+				if (brightness < 0)
+					brightness = 0;
+			}
+		}
+		else
+		{
+			for (int i = 0; i < buf.size(); i++)
+			{
+				if (buf[i] == beginning)
+					start = true;
+				else if (start && !nextNum && !next2Num)
+				{
+					if (buf[i] == separator)
+						nextNum = true;
+					else
+						h += buf[i];
+				}
+				else if (nextNum && !next2Num)
+				{
+					if (buf[i] == separator)
+						next2Num = true;
+					else
+						s += buf[i];
+				}
+				else if (next2Num)
+				{
+					v += buf[i];
+				}
+			}
+			hue = (((double)(atoi(h.c_str())+1.0)/360.0)*180.0);
+			saturation = ((double)(atoi(s.c_str())/100.0)*255.0);
+			brightness = ((double)(atoi(v.c_str())/100.0)*255.0);
+			cout << "h: " << h << " s: " << s << " v: " << v;
+			cout << "hue: " << hue << " sat: " << saturation << " val: " << brightness;
+			h = "";
+			s = "";
+			v = "";
+			start = false;
+			nextNum = false;
+			next2Num = false;
+		}
 	}
+	else
+		mode = last_mode;
+	std::cout << mode;
 	return mode;
 }
