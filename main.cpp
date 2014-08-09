@@ -44,6 +44,9 @@
 #include <opencv2/contrib/contrib.hpp>
 #include <opencv2/objdetect/objdetect.hpp>
 
+// For curl library to read from http site for data from Pebble
+#include <curl/curl.h> 
+
 // Namespaces
 using namespace cv;
 using namespace std;
@@ -61,6 +64,8 @@ Mat calcOutline(Mat imgOriginal);
 static void read_csv(const string& filename, vector<Mat>& images, vector<int>& labels, char separator = ';');
 // Calculates facial rec frame
 Mat calcFace(Mat imgOriginal, CascadeClassifier haar_cascade, int im_width, int im_height, Ptr<FaceRecognizer> model);
+// Some curl function
+size_t curl_write(void *ptr, size_t size, size_t nmemb, void *stream);
 
 // Globals
 
@@ -126,10 +131,13 @@ int kernel_size = 3;
 int hueUpdate = 10;
 bool bounce = false;
 
+// HTML String
+std::string buffer;
+
 int main(int argc, char** argv)
 {
 	// START TRAINING
-	cout << "START TRAINING" << endl;
+	std::cout << "START TRAINING" << endl;
 	// Get the path to your CascadeClassifier and CSV:
 	string fn_haar = "C:/Users/Alvin/Desktop/opencv/sources/data/haarcascades/haarcascade_frontalface_default.xml";
 	string fn_csv = "C:/Users/Alvin/Desktop/findAR/facescsv.txt"; // Change to work
@@ -182,7 +190,7 @@ int main(int argc, char** argv)
 	//
 	CascadeClassifier haar_cascade;
 	haar_cascade.load(fn_haar);
-	cout << "END TRAINING" << endl;
+	std::cout << "END TRAINING" << endl;
 	// END TRAINING
 
 	// Create a GUI window
@@ -198,12 +206,20 @@ int main(int argc, char** argv)
     
 	if (!cap.isOpened())  // if not success, exit program
 	{
-		cout << "Cannot open the web cam" << endl;
+		std::cout << "Cannot open the web cam" << endl;
 		return -1;
 	}
     
 	Mat imgOriginal;
 	Mat img_final;
+
+	// Set initial mode and set curl URL
+	CURL *curl = curl_easy_init();
+	curl_easy_setopt(curl, CURLOPT_URL, "http://dev.quasi.co/findar/");
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_write);
+	curl_easy_perform(curl);
+	curl_easy_cleanup(curl);
+	fwrite(buffer.c_str(), buffer.length(), sizeof(char), stdout);
     
 	while (true)
 	{
@@ -211,20 +227,25 @@ int main(int argc, char** argv)
 
 		if (!bSuccess) //if not success, break loop
 		{
-			cout << "Cannot read a frame from video stream" << endl;
+			std::cout << "Cannot read a frame from video stream" << endl;
 			break;
 		}
 
 		int mode = 9;
-		/*
-		mode = getMode(); //get mode from pebble
+		
+		//curl request from web server
+		//curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_write);
+		//curl_easy_perform(curl);
+		//curl_easy_cleanup(curl);
+		//fwrite(buffer.c_str(), buffer.length(), sizeof(char), stdout);
 
-		if (!mode &&)
+		//mode = getMode(buffer); //get mode from pebble
+
+		if (!mode)
 		{
 			cout << "Cannot get mode from pebble" << endl;
 			break;
 		}
-		*/
 
 		switch (mode)
 		{
@@ -236,11 +257,11 @@ int main(int argc, char** argv)
 			break;
 		case GRAY:
 			// Convert the image to grayscale
-			cvtColor(imgOriginal, img_gray, CV_BGR2GRAY);
-			cvtColor(img_gray, img_final, CV_GRAY2BGR);
+			cv::cvtColor(imgOriginal, img_gray, CV_BGR2GRAY);
+			cv::cvtColor(img_gray, img_final, CV_GRAY2BGR);
 			break;
 		case BW:
-			cvtColor(imgOriginal, img_gray, CV_RGB2GRAY);
+			cv::cvtColor(imgOriginal, img_gray, CV_RGB2GRAY);
 			img_final = img_gray > 128;
 			break;
 		case SEPIA:
@@ -249,7 +270,7 @@ int main(int argc, char** argv)
 		case CENSOR:
 			break;
 		case HUE:
-			cvtColor(imgOriginal, imgHSV, CV_RGB2HSV);
+			cv::cvtColor(imgOriginal, imgHSV, CV_RGB2HSV);
 			split(imgHSV, hsv_planes);
 			hsv_planes[0] += hueUpdate; // H channel
 			if (!bounce)
@@ -272,7 +293,7 @@ int main(int argc, char** argv)
 			break;
 		case MODE_ERROR:
 		default:
-			cout << "Hit break statement ERROR" << endl;
+			std::cout << "Hit break statement ERROR" << endl;
 			exit(1);
 			break;
 		}
@@ -281,7 +302,7 @@ int main(int argc, char** argv)
         
 		if (waitKey(30) == 27) //wait for 'esc' key press for 30ms. If 'esc' key is pressed, break loop
 		{
-			cout << "esc key is pressed by user" << endl;
+			std::cout << "esc key is pressed by user" << endl;
 			break;
 		}
         
@@ -476,13 +497,13 @@ Mat calcFace(Mat imgOriginal, CascadeClassifier haar_cascade, int im_width, int 
 		string name;
 		string box_text;
 
-		cout << prediction << endl;
-		cout << predict_confidence << endl;
+		//cout << prediction << endl;
+		//cout << predict_confidence << endl;
 
 		// Calculate the position for annotated text (make sure we don't
 		// put illegal values in there):
-		int pos_x = std::max(face_i.tl().x - 10, 0);
-		int pos_y = std::max(face_i.tl().y - 10, 0);
+		int pos_x = face_i.tl().x - 10;
+		int pos_y = face_i.tl().y - 10;
 
 		// And finally write all we've found out to the original image!
 		// First of all draw a green rectangle around the detected face:
@@ -511,4 +532,22 @@ Mat calcFace(Mat imgOriginal, CascadeClassifier haar_cascade, int im_width, int 
 	}
 	// Show the result:
 	return imgOriginal;
+}
+
+// This is the callback function that is called by curl_easy_perform(curl) 
+size_t curl_write(void *ptr, size_t size, size_t nmemb, void *stream)
+{
+	buffer.append((char*)ptr, size*nmemb);
+	return size*nmemb;
+}
+
+int getMode(std::string buf)
+{
+	int mode = 0;
+	if (buf == "null")
+	{
+		//mode = MODE_ERROR;
+		mode = ORIGINAL;
+	}
+	return mode;
 }

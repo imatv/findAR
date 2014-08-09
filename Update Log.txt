@@ -6,6 +6,11 @@ TODO: Face recognition.
 TODO: If many modes, create a menu to open each one.
 TODO: RESOLUTION for SPEED.
 ---------------------------------------------------------------------------------------------------------------------
+8/9/2014 10:05 AM PST (PUSHED TO GITHUB)
+
+Pebble and Web Framework created.
+Implemented cURL to grab info from Pebble app.
+---------------------------------------------------------------------------------------------------------------------
 8/9/2014 6:14 AM PST (PUSHED TO GITHUB)
 
 Switched facial algorithm to LBPH. Improved performance.
