@@ -700,7 +700,7 @@ Mat calcObjectDetect(Mat imgOriginal)
             int pos_x = (width / 2) + leftCornerX;
             int pos_y = (height / 2) + leftCornerY;
             
-            int rad = width/2;
+            int rad = (width + height)/4;
             
             // drawing bounding circle and object label
             circle(frame, Point(pos_x, pos_y), rad, Scalar(255, 0, 0), 4, 8, 0);
