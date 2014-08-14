@@ -1,4 +1,5 @@
 /*
+* ######################## for Facial Recognition feature ########################
 * Copyright (c) 2011. Philipp Wagner <bytefish[at]gmx[dot]de>.
 * Released to public domain under terms of the BSD Simplified license.
 *
@@ -14,10 +15,8 @@
 *     without specific prior written permission.
 *
 *   See <http://www.opensource.org/licenses/bsd-license>
+* ###############################################################################
 */
-// ^ For facial recognition features...
-
-// /usr/local/cellar/opencv-2.4.9/data/haarcascades/haarcascade_frontalface_default.xml
 
 #define WIN32_LEAN_AND_MEAN // Exclude rarely-used stuff from Windows headers
 
@@ -43,6 +42,7 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/contrib/contrib.hpp>
 #include <opencv2/objdetect/objdetect.hpp>
+#include <opencv2/nonfree/features2d.hpp>
 
 // For curl library to read from http site for data from Pebble
 #include <curl/curl.h>
@@ -70,6 +70,15 @@ size_t curl_write(void *ptr, size_t size, size_t nmemb, void *stream);
 int getMode(std::string buf);
 // facial detect frame
 Mat calcFaceDetect(Mat imgOriginal, CascadeClassifier haar_cascade, int im_width, int im_height, Ptr<FaceRecognizer> model);
+
+/* ADDED FOR OBJECT DETECTION: read an image of object, detect presence of that object in live video feed.
+// Calculates image for Object Detection by SURF
+Mat calcObjectDetect(Mat imgOriginal);
+// get min element of array of size 4
+int minElement(int arr[]);
+// get max element of array of size 4
+int maxElement(int arr[]);
+*/
 
 // Globals
 
@@ -578,6 +587,155 @@ Mat calcFaceDetect(Mat imgOriginal, CascadeClassifier haar_cascade, int im_width
 	// Show the result:
 	return imgOriginal;
 }
+
+/*  
+ *  FOR OBJECT DETECTION
+ *  Literally copy-pasted from main() of test .cpp file
+ *  WILL NOT WORK AS-IS
+ *
+ */
+/*
+Mat calcObjectDetect(Mat imgOriginal)
+{
+    Mat object = imread( "example.jpg", CV_LOAD_IMAGE_GRAYSCALE );
+    string objectName = "object title";
+    
+    if(!object.data) {
+        cout<< "Base image cannot be read." << endl;
+        return -1;
+    }
+    
+    //Detect the keypoints using SURF Detector
+    int minHessian = 500;
+    
+    SurfFeatureDetector detector(minHessian);
+    vector<KeyPoint> kp_object;
+    
+    detector.detect( object, kp_object );
+    
+    //Calculate descriptors (feature vectors)
+    SurfDescriptorExtractor extractor;
+    Mat des_object;
+    
+    extractor.compute(object, kp_object, des_object);
+    
+    FlannBasedMatcher matcher;
+
+    // REPLACE WITH imgOriginal
+    // VideoCapture cap(0);
+    // cap.set(CV_CAP_PROP_FRAME_WIDTH, 640);
+	// cap.set(CV_CAP_PROP_FRAME_HEIGHT, 480);
+    
+    std::vector<Point2f> obj_corners(4);
+    
+    //Get the corners from the object
+    obj_corners[0] = (cvPoint(0, 0));
+    obj_corners[1] = (cvPoint(object.cols, 0));
+    obj_corners[2] = (cvPoint(object.cols, object.rows));
+    obj_corners[3] = (cvPoint(0, object.rows));
+    
+    char key = 'a';
+    int framecount = 0;
+    while (key != 27)
+    {
+        Mat frame;
+        cap >> frame;
+        
+        if (framecount < 5) {
+            framecount++;
+            continue;
+        }
+        
+        Mat des_image, img_matches;
+        std::vector<KeyPoint> kp_image;
+        std::vector<vector<DMatch > > matches;
+        std::vector<DMatch > good_matches;
+        std::vector<Point2f> obj;
+        std::vector<Point2f> scene;
+        std::vector<Point2f> scene_corners(4);
+        Mat H;
+        Mat image;
+        
+        cvtColor(frame, image, CV_RGB2GRAY);
+        
+        detector.detect(image, kp_image);
+        extractor.compute(image, kp_image, des_image);
+        
+        matcher.knnMatch(des_object, des_image, matches, 2);
+        
+        //THIS LOOP IS SENSITIVE TO SEGFAULTS
+        for(int i = 0; i < min(des_image.rows-1,(int) matches.size()); i++) {
+            if((matches[i][0].distance < 0.6*(matches[i][1].distance)) && ((int) matches[i].size()<=2 && (int) matches[i].size()>0)) {
+                good_matches.push_back(matches[i][0]);
+            }
+        }
+        
+        if (good_matches.size() >= 4) {
+            for ( int i = 0; i < good_matches.size(); i++ ) {
+                //Get the keypoints from the good matches
+                obj.push_back(kp_object[ good_matches[i].queryIdx ].pt);
+                scene.push_back(kp_image[ good_matches[i].trainIdx ].pt);
+            }
+            
+            H = findHomography(obj, scene, CV_RANSAC);
+            
+            perspectiveTransform(obj_corners, scene_corners, H);
+            
+            int xValues[] = {scene_corners[0].x, scene_corners[1].x, scene_corners[2].x, scene_corners[3].x};
+            int yValues[] = {scene_corners[0].y, scene_corners[1].y, scene_corners[2].y, scene_corners[3].y};
+            
+            // finding top-left corner coordinates
+            int leftCornerX = minElement(xValues);
+            int leftCornerY = minElement(yValues);
+            
+            // finding bottom-right corner coordinates
+            int rightCornerX = maxElement(xValues);
+            int rightCornerY = maxElement(yValues);
+            
+            int width = abs (rightCornerX - leftCornerX);
+            int height = abs (rightCornerY - leftCornerY);
+            
+            // finding center between corners
+            int pos_x = (width / 2) + leftCornerX;
+            int pos_y = (height / 2) + leftCornerY;
+            
+            int rad = width/2;
+            
+            // drawing bounding circle and object label
+            circle(frame, Point(pos_x, pos_y), rad, Scalar(255, 0, 0), 4, 8, 0);
+            putText(frame, objectName, Point(pos_x, pos_y - rad - 15), FONT_HERSHEY_PLAIN, 1.0, Scalar(255, 0, 0), 2.0);
+        }
+        
+        //Show detected matches
+        imshow( "Object Recognition", frame );
+        
+        key = waitKey(1);
+    }
+    return 0;
+}
+
+// finds min element in array of size 4
+int minElement(int arr[]) {
+    int curr = arr[0];
+    for (int i = 1; i < 4; i++) {
+        if (arr[i] < curr) {
+            curr = arr[i];
+        }
+    }
+    return curr;
+}
+
+// finds max element in array of size 4
+int maxElement(int arr[]) {
+    int curr = arr[0];
+    for (int i = 1; i < 4; i++) {
+        if (arr[i] > curr) {
+            curr = arr[i];
+        }
+    }
+    return curr;
+}
+*/
 
 // This is the callback function that is called by curl_easy_perform(curl) 
 size_t curl_write(void *ptr, size_t size, size_t nmemb, void *stream)

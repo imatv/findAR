@@ -2,6 +2,11 @@ TODO: Restart and close all applications before demo.
 TODO: Integrate Oculus output directly. (w/o Oculus Overlay)
 TODO: Myo armband user interface.
 TODO: RESOLUTION for SPEED.
+TODO: Object detection (calcObjectDetect() in main.cpp) needs to be incorporated into current system.
+---------------------------------------------------------------------------------------------------------------------
+8/14/2014 1:03 AM PST (PUSHED TO GITHUB)
+
+Implemented object detection: read image of object, detect presence of object in live feed.
 ---------------------------------------------------------------------------------------------------------------------
 8/9/2014 2:46 PM PST (PUSHED TO GITHUB)
 
