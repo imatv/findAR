@@ -592,6 +592,7 @@ Mat calcFaceDetect(Mat imgOriginal, CascadeClassifier haar_cascade, int im_width
  *  FOR OBJECT DETECTION
  *  Literally copy-pasted from main() of test .cpp file
  *  WILL NOT WORK AS-IS
+ *  based on code from: https://github.com/doczhivago/rtObjectRecognition
  *
  */
 /*
