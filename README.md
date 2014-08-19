@@ -16,6 +16,7 @@ Technologies Used:
 - C/C++
 - Javascript
 - OpenCV
+- cURL
 - Oculus Overlay
 - Oculus Rift DK1
 - Pebble Smartwatch
