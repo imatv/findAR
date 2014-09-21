@@ -1,7 +1,6 @@
-TODO: Restart and close all applications before demo.
+Note: Changing resolution output changes runtime of app.
+
 TODO: Integrate Oculus output directly. (w/o Oculus Overlay)
-TODO: Myo armband user interface.
-TODO: RESOLUTION for SPEED.
 TODO: Object detection (calcObjectDetect() in main.cpp) needs to be incorporated into current system.
 ---------------------------------------------------------------------------------------------------------------------
 8/14/2014 1:03 AM PST (PUSHED TO GITHUB)
@@ -10,7 +9,14 @@ Implemented object detection: read image of object, detect presence of object in
 ---------------------------------------------------------------------------------------------------------------------
 8/9/2014 2:46 PM PST (PUSHED TO GITHUB)
 
-Working prototype. Will describe later.
+Working prototype.
+Demo-ready.
+Pebble menu works with controlling findAR application.
+Everything is working.
+Switched facial rec back to other algorithm.
+Parsing from Pebble app works.
+Switching from mode-to-mode works.
+Web application also works.
 ---------------------------------------------------------------------------------------------------------------------
 8/9/2014 10:05 AM PST (PUSHED TO GITHUB)
 
