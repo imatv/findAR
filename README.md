@@ -3,6 +3,8 @@ findAR
 
 ###"Oh, there you AR."
 
+[ChallengePost](http://challengepost.com/software/findar) link!
+
 findAR is an Oculus Rift augmented reality application that allows users to view their world
 in various filter settings such as gray-scale, sepia, black/white, outlines, and hue gradient.
 It also has a color picker mode that detects a lost object's color and desaturates the background,
